@@ -1,0 +1,307 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>مؤقت المذاكرة</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;500;700&family=DM+Mono:wght@500&display=swap">
+<style>
+/* Layout: one centered column, a large progress ring is the focus, controls sit under it in thumb reach. */
+:root {
+  --bg: #edf1f5;
+  --surface: #ffffff;
+  --fg: #14202b;
+  --muted: #5d6c7a;
+  --track: #d8e0e8;
+  --study: #2b59c3;
+  --rest: #1b8a69;
+  --on-accent: #ffffff;
+  --font-ui: "Readex Pro", "Segoe UI", Tahoma, sans-serif;
+  --font-num: "DM Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --accent: var(--study);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d141b;
+    --surface: #15202a;
+    --fg: #e6edf3;
+    --muted: #93a3b3;
+    --track: #223140;
+    --study: #7ba0f5;
+    --rest: #4cc59b;
+    --on-accent: #0d141b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d141b;
+  --surface: #15202a;
+  --fg: #e6edf3;
+  --muted: #93a3b3;
+  --track: #223140;
+  --study: #7ba0f5;
+  --rest: #4cc59b;
+  --on-accent: #0d141b;
+  color-scheme: dark;
+}
+:root[data-mode="rest"] { --accent: var(--rest); }
+
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-ui);
+  padding-block: 20px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  transition: background .3s;
+}
+.app {
+  max-width: 420px;
+  margin: 0 auto;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 28px;
+}
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 4px;
+  gap: 4px;
+}
+.tab {
+  font: 500 15px/1 var(--font-ui);
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  padding: 13px 8px;
+  cursor: pointer;
+}
+.tab[aria-selected="true"] { background: var(--accent); color: var(--on-accent); }
+.tab small { font: 500 12px var(--font-num); opacity: .8; margin-inline-start: 6px; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+.dial { position: relative; width: min(100%, 320px); margin: 0 auto; aspect-ratio: 1; }
+.dial svg { width: 100%; height: 100%; display: block; transform: rotate(-90deg); }
+.ring-track { fill: none; stroke: var(--track); stroke-width: 10; }
+.ring-fill {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dashoffset .35s linear, stroke .3s;
+}
+.readout {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px;
+}
+.time {
+  font: 500 clamp(56px, 19vw, 76px)/1 var(--font-num);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  direction: ltr;
+}
+.phase { font-size: 15px; color: var(--muted); text-align: center; padding-inline: 24px; text-wrap: balance; }
+
+.controls { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 10px; align-items: stretch; }
+.btn {
+  font: 500 16px/1 var(--font-ui);
+  border: 0; border-radius: 14px; padding: 18px 8px; cursor: pointer;
+  background: var(--surface); color: var(--fg);
+}
+.btn.main { background: var(--accent); color: var(--on-accent); font-weight: 700; font-size: 18px; }
+.btn:active { transform: scale(.98); }
+
+.foot {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  color: var(--muted); font-size: 14px;
+}
+.dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; max-width: 160px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--study); }
+.count { font-family: var(--font-num); color: var(--fg); }
+@media (prefers-reduced-motion: reduce) { .ring-fill, body { transition: none; } }
+</style>
+
+<main class="app" dir="rtl" lang="ar">
+  <div class="tabs" role="tablist" aria-label="نوع الجلسة">
+    <button class="tab" id="tab-study" role="tab" aria-selected="true">دراسة <small>25:00</small></button>
+    <button class="tab" id="tab-rest" role="tab" aria-selected="false">راحة <small>05:00</small></button>
+  </div>
+
+  <div class="dial">
+    <svg viewBox="0 0 240 240" aria-hidden="true">
+      <circle class="ring-track" cx="120" cy="120" r="108"></circle>
+      <circle class="ring-fill" id="ring" cx="120" cy="120" r="108"></circle>
+    </svg>
+    <div class="readout" role="timer" aria-live="off">
+      <div class="time" id="time">25:00</div>
+      <div class="phase" id="phase">ركّز على مهمة وحدة بس</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn" id="reset">إعادة</button>
+    <button class="btn main" id="toggle">ابدأ</button>
+    <button class="btn" id="skip">تخطي</button>
+  </div>
+
+  <div class="foot">
+    <span>جلسات اليوم: <span class="count" id="count">0</span></span>
+    <div class="dots" id="dots" aria-hidden="true"></div>
+  </div>
+</main>
+
+<script>
+(function () {
+  var DUR = { study: 25 * 60, rest: 5 * 60 };
+  var TEXT = {
+    study: "ركّز على مهمة وحدة بس",
+    rest: "ابتعد عن الشاشة شوي، اشرب ماي"
+  };
+  var R = 108, C = 2 * Math.PI * R;
+  var root = document.documentElement;
+  var ring = document.getElementById("ring");
+  var timeEl = document.getElementById("time");
+  var phaseEl = document.getElementById("phase");
+  var toggleBtn = document.getElementById("toggle");
+  var countEl = document.getElementById("count");
+  var dotsEl = document.getElementById("dots");
+  var tabs = { study: document.getElementById("tab-study"), rest: document.getElementById("tab-rest") };
+
+  ring.style.strokeDasharray = C;
+
+  var mode = "study", remaining = DUR.study, running = false, endAt = 0, timer = null;
+  var sessions = 0, audioCtx = null, wakeLock = null;
+
+  function todayKey() {
+    var d = new Date();
+    return "pomodoro-" + d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+  }
+  function loadSessions() {
+    try { sessions = parseInt(localStorage.getItem(todayKey()), 10) || 0; } catch (e) { sessions = 0; }
+  }
+  function saveSessions() {
+    try { localStorage.setItem(todayKey(), String(sessions)); } catch (e) {}
+  }
+
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+
+  function render() {
+    var m = Math.floor(remaining / 60), s = remaining % 60;
+    timeEl.textContent = pad(m) + ":" + pad(s);
+    ring.style.strokeDashoffset = C * (1 - remaining / DUR[mode]);
+    root.setAttribute("data-mode", mode);
+    toggleBtn.textContent = running ? "إيقاف مؤقت" : (remaining < DUR[mode] ? "كمّل" : "ابدأ");
+    tabs.study.setAttribute("aria-selected", mode === "study");
+    tabs.rest.setAttribute("aria-selected", mode === "rest");
+    countEl.textContent = sessions;
+    dotsEl.innerHTML = "";
+    for (var i = 0; i < Math.min(sessions, 12); i++) {
+      var d = document.createElement("span");
+      d.className = "dot";
+      dotsEl.appendChild(d);
+    }
+  }
+
+  function beep() {
+    try {
+      if (!audioCtx) return;
+      var t = audioCtx.currentTime;
+      [0, 0.35, 0.7].forEach(function (offset) {
+        var o = audioCtx.createOscillator();
+        var g = audioCtx.createGain();
+        o.type = "sine";
+        o.frequency.value = 880;
+        g.gain.setValueAtTime(0.0001, t + offset);
+        g.gain.exponentialRampToValueAtTime(0.4, t + offset + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + offset + 0.28);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(t + offset); o.stop(t + offset + 0.3);
+      });
+    } catch (e) {}
+    try { if (navigator.vibrate) navigator.vibrate([300, 150, 300]); } catch (e) {}
+  }
+
+  function lockScreen() {
+    try {
+      if (navigator.wakeLock && navigator.wakeLock.request) {
+        navigator.wakeLock.request("screen").then(function (l) { wakeLock = l; }).catch(function () {});
+      }
+    } catch (e) {}
+  }
+  function unlockScreen() {
+    try { if (wakeLock) { wakeLock.release(); wakeLock = null; } } catch (e) {}
+  }
+
+  function tick() {
+    remaining = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+    if (remaining === 0) { finish(); return; }
+    render();
+  }
+
+  function start() {
+    try {
+      if (!audioCtx) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) audioCtx = new AC();
+      }
+      if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    } catch (e) {}
+    running = true;
+    endAt = Date.now() + remaining * 1000;
+    clearInterval(timer);
+    timer = setInterval(tick, 250);
+    lockScreen();
+    render();
+  }
+
+  function pause() {
+    running = false;
+    clearInterval(timer);
+    unlockScreen();
+    render();
+  }
+
+  function setMode(next) {
+    pause();
+    mode = next;
+    remaining = DUR[mode];
+    phaseEl.textContent = TEXT[mode];
+    render();
+  }
+
+  function finish() {
+    var was = mode;
+    pause();
+    beep();
+    if (was === "study") { sessions++; saveSessions(); }
+    mode = was === "study" ? "rest" : "study";
+    remaining = DUR[mode];
+    phaseEl.textContent = was === "study" ? "خلصت الجلسة! وقت الراحة، دوس ابدأ" : "خلصت الراحة، جاهز للجلسة الجاية؟";
+    render();
+  }
+
+  toggleBtn.addEventListener("click", function () { running ? pause() : start(); });
+  document.getElementById("reset").addEventListener("click", function () {
+    pause(); remaining = DUR[mode]; phaseEl.textContent = TEXT[mode]; render();
+  });
+  document.getElementById("skip").addEventListener("click", function () {
+    setMode(mode === "study" ? "rest" : "study");
+  });
+  tabs.study.addEventListener("click", function () { setMode("study"); });
+  tabs.rest.addEventListener("click", function () { setMode("rest"); });
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible" && running) { tick(); lockScreen(); }
+  });
+
+  loadSessions();
+  render();
+})();
+</script>
+
+</body></html>
